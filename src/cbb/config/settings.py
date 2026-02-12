@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     )
 
     database_url: str
+    odds_api_key: str = ""
+    odds_api_base_url: str = "https://api.the-odds-api.com/v4"
 
 
 settings = Settings()
