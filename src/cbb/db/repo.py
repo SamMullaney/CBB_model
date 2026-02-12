@@ -1,4 +1,4 @@
-"""Repository: DB write functions for games and prices.
+"""Repository: DB read/write functions for games and prices.
 
 Uses SQLAlchemy Core (text()) — no ORM models required.
 """
@@ -109,3 +109,63 @@ def insert_games_and_prices(
     counts = {"games_upserted": len(id_map), "prices_inserted": prices_inserted}
     logger.info("insert_games_and_prices: %s", counts)
     return counts
+
+
+# ── Snapshot queries ─────────────────────────────────────────────────
+
+_LATEST_CAPTURED_AT = text("""
+    SELECT MAX(captured_at) FROM prices
+""")
+
+_PRICES_FOR_CAPTURE = text("""
+    SELECT g.external_game_id,
+           p.captured_at,
+           p.bookmaker,
+           p.market,
+           p.outcome,
+           p.line,
+           p.odds_american,
+           p.odds_decimal
+      FROM prices p
+      JOIN games g ON g.id = p.game_id
+     WHERE p.captured_at = :captured_at
+""")
+
+
+def get_latest_captured_at(db: Session) -> datetime | None:
+    """Return the most recent captured_at timestamp, or None if the table is empty."""
+    row = db.execute(_LATEST_CAPTURED_AT).scalar()
+    return row
+
+
+def get_prices_for_capture(
+    db: Session,
+    captured_at: datetime,
+) -> list[PriceRow]:
+    """Return every price row for a given captured_at snapshot."""
+    rows = db.execute(_PRICES_FOR_CAPTURE, {"captured_at": captured_at}).fetchall()
+    return [
+        PriceRow(
+            external_game_id=r[0],
+            captured_at=r[1],
+            bookmaker=r[2],
+            market=r[3],
+            outcome=r[4],
+            line=r[5],
+            odds_american=r[6],
+            odds_decimal=r[7],
+        )
+        for r in rows
+    ]
+
+
+def get_latest_prices(db: Session) -> list[PriceRow]:
+    """Return all prices from the most recent snapshot.
+
+    Convenience wrapper: finds the latest captured_at, then fetches
+    all rows for that timestamp. Returns an empty list if no data exists.
+    """
+    ts = get_latest_captured_at(db)
+    if ts is None:
+        return []
+    return get_prices_for_capture(db, ts)
