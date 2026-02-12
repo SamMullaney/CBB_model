@@ -1,0 +1,147 @@
+Metadata-Version: 2.4
+Name: cbb_model
+Version: 0.1.0
+Summary: College Basketball arbitrage + EV betting bots
+Requires-Python: >=3.12
+Description-Content-Type: text/markdown
+Requires-Dist: fastapi>=0.110
+Requires-Dist: uvicorn[standard]>=0.27
+Requires-Dist: pydantic>=2.6
+Requires-Dist: pydantic-settings>=2.2
+Requires-Dist: httpx>=0.27
+Requires-Dist: tenacity>=8.2
+Requires-Dist: numpy>=1.26
+Requires-Dist: pandas>=2.2
+Requires-Dist: scipy>=1.12
+Requires-Dist: sqlalchemy>=2.0
+Requires-Dist: psycopg[binary]>=3.1
+Provides-Extra: dev
+Requires-Dist: pytest>=8.0; extra == "dev"
+Requires-Dist: ruff>=0.3; extra == "dev"
+Requires-Dist: mypy>=1.8; extra == "dev"
+
+README - Sam Mullaney CBB Prediction Model
+
+Skeleton Repo Structure:
+cbb-betting-bots/
+├─ README.md
+├─ CLAUDE.md
+├─ pyproject.toml
+├─ .gitignore
+├─ .env.example
+├─ docker-compose.yml
+├─ Makefile
+│
+├─ infra/
+│  └─ sql/
+│     └─ 010_tables.sql
+│
+├─ scripts/
+│  ├─ run_api.py
+│  ├─ run_arb_worker.py
+│  └─ run_edge_worker.py
+│
+├─ src/
+│  └─ cbb/
+│     ├─ __init__.py
+│     │
+│     ├─ config/
+│     │  ├─ __init__.py
+│     │  ├─ settings.py
+│     │  └─ logging.py
+│     │
+│     ├─ clients/
+│     │  ├─ __init__.py
+│     │  └─ odds_api.py              # placeholder for later
+│     │
+│     ├─ ingestion/
+│     │  ├─ __init__.py
+│     │  └─ odds_ingest.py           # placeholder for later
+│     │
+│     ├─ pricing/
+│     │  ├─ __init__.py
+│     │  ├─ implied_prob.py          # placeholder for later
+│     │  ├─ devig.py                 # placeholder for later
+│     │  ├─ arb.py                   # placeholder for later
+│     │  ├─ ev.py                    # placeholder for later
+│     │  └─ kelly.py                 # placeholder for later
+│     │
+│     ├─ modeling/
+│     │  ├─ __init__.py
+│     │  └─ margin_model.py          # placeholder for later
+│     │
+│     ├─ alerts/
+│     │  ├─ __init__.py
+│     │  └─ discord.py               # placeholder for later
+│     │
+│     ├─ db/
+│     │  ├─ __init__.py
+│     │  ├─ session.py
+│     │  └─ repo.py
+│     │
+│     ├─ bots/
+│     │  ├─ __init__.py
+│     │  ├─ arb_bot.py               # orchestrates arb pipeline
+│     │  └─ edge_bot.py              # orchestrates edge pipeline
+│     │
+│     ├─ api/
+│     │  ├─ __init__.py
+│     │  └─ main.py
+│     │
+│     └─ utils/
+│        ├─ __init__.py
+│        └─ time.py                  # placeholder for later
+│
+└─ tests/
+   ├─ __init__.py
+   └─ test_smoke.py
+
+
+   Step-by-step build order (clean + industry standard)
+Phase 1 — Repo “boots” (no Odds API yet)
+
+Goal: pytest passes, FastAPI runs, Postgres runs.
+
+Create the directory skeleton
+
+Yes: create the directories now, even if files are placeholders.
+
+This locks in the architecture and makes Claude’s edits safer.
+
+Add these root files first:
+
+pyproject.toml (dependencies + tooling)
+
+.gitignore (ignore .venv, .env, caches)
+
+.env.example (template vars)
+
+docker-compose.yml (postgres)
+
+README.md (how to run)
+
+CLAUDE.md (rules)
+
+Add minimal “boot files”:
+
+src/cbb/config/settings.py
+
+src/cbb/api/main.py with /health
+
+tests/test_smoke.py
+
+Verify boot:
+
+Create .venv and install
+
+docker compose up -d (postgres)
+
+pytest
+
+uvicorn cbb.api.main:app --reload
+
+Stop here only when all 3 work.
+
+Why this order works:
+
+If uvicorn + imports + tests aren’t stable, Odds API code will be painful.
