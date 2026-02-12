@@ -1,10 +1,10 @@
-# CLAUDE.md — CBB Betting Bots (Arb + Mispricing)
+# CLAUDE.md — Arbitragte Betting Bot
 
 ## Project Goal
-Build two bots:
+Build arb bot:
 
-1) Bot A (Arb): ingest odds from The Odds API, compute no-vig prices, detect arbitrage + best-price opportunities, and alert.
-2) Bot B (Edges): produce CBB projections using KenPom-based features, compare to market spreads/totals, compute cover probabilities, EV, and fractional-Kelly stakes, then alert.
+1) Bot: ingest odds from The Odds API, compute no-vig prices, detect arbitrage + best-price opportunities, and alert.
+
 
 This repo is Python-first and deploys as:
 - FastAPI service (read/query)
@@ -18,7 +18,7 @@ This repo is Python-first and deploys as:
 - SQLAlchemy + psycopg
 - httpx (Odds API)
 - tenacity (retries/backoff)
-- numpy, pandas, scipy
+- numpy, pandas
 - pytest + ruff
 - Docker + docker-compose
 - Discord webhooks for alerts
