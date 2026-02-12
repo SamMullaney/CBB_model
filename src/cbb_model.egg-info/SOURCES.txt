@@ -1,0 +1,10 @@
+README.md
+pyproject.toml
+src/cbb/api/main.py
+src/cbb/config/settings.py
+src/cbb_model.egg-info/PKG-INFO
+src/cbb_model.egg-info/SOURCES.txt
+src/cbb_model.egg-info/dependency_links.txt
+src/cbb_model.egg-info/requires.txt
+src/cbb_model.egg-info/top_level.txt
+tests/test_smoke.py
