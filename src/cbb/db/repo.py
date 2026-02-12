@@ -169,3 +169,27 @@ def get_latest_prices(db: Session) -> list[PriceRow]:
     if ts is None:
         return []
     return get_prices_for_capture(db, ts)
+
+
+# ── Alert dedupe ─────────────────────────────────────────────────────
+
+_CHECK_ALERT = text("""
+    SELECT 1 FROM arb_alerts_sent WHERE fingerprint = :fp LIMIT 1
+""")
+
+_INSERT_ALERT = text("""
+    INSERT INTO arb_alerts_sent (fingerprint)
+    VALUES (:fp)
+    ON CONFLICT (fingerprint) DO NOTHING
+""")
+
+
+def is_alert_sent(db: Session, fingerprint: str) -> bool:
+    """Return True if this fingerprint has already been alerted."""
+    return db.execute(_CHECK_ALERT, {"fp": fingerprint}).fetchone() is not None
+
+
+def mark_alert_sent(db: Session, fingerprint: str) -> None:
+    """Record that an alert with this fingerprint has been sent."""
+    db.execute(_INSERT_ALERT, {"fp": fingerprint})
+    db.commit()
