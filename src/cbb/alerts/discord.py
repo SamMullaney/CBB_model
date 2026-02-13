@@ -13,6 +13,12 @@ logger = logging.getLogger(__name__)
 _TIMEOUT = 10.0
 
 
+def _format_leg(leg) -> str:
+    """Format one leg: outcome, line (if spread), odds, book."""
+    line_str = f" ({leg.line:+g})" if leg.line is not None else ""
+    return f"  {leg.outcome + line_str:<35s}  {leg.odds_american:>+5d}  @ {leg.bookmaker}"
+
+
 def format_arb_message(opp: ArbOpportunity) -> str:
     """Build a human-readable Discord message for one arb opportunity."""
     a, b = opp.leg_a, opp.leg_b
@@ -22,8 +28,8 @@ def format_arb_message(opp: ArbOpportunity) -> str:
         f"Game:   {a.outcome} vs {b.outcome}\n"
         f"Market: {opp.market}\n"
         f"\n"
-        f"  {a.outcome:<30s}  {a.odds_american:>+5d}  @ {a.bookmaker}\n"
-        f"  {b.outcome:<30s}  {b.odds_american:>+5d}  @ {b.bookmaker}\n"
+        f"{_format_leg(a)}\n"
+        f"{_format_leg(b)}\n"
         f"\n"
         f"Stake split ($100):\n"
         f"  {a.outcome}: ${opp.stakes[a.outcome]:.2f}\n"

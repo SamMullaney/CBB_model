@@ -17,9 +17,9 @@ CREATE TABLE IF NOT EXISTS games (
     created_at        timestamptz     NOT NULL DEFAULT now()
 );
 
--- One row per game from the API; upsert-friendly
-CREATE UNIQUE INDEX IF NOT EXISTS uq_games_external_id
-    ON games (external_game_id);
+-- One row per game per sport from the API; upsert-friendly
+CREATE UNIQUE INDEX IF NOT EXISTS uq_games_sport_external_id
+    ON games (sport_key, external_game_id);
 
 -- ── prices ───────────────────────────────────────────────────────────
 -- One row per bookmaker × market × outcome per capture batch.

@@ -42,7 +42,7 @@ class PriceRow(TypedDict):
 _UPSERT_GAME = text("""
     INSERT INTO games (external_game_id, sport_key, commence_time, home_team, away_team)
     VALUES (:external_game_id, :sport_key, :commence_time, :home_team, :away_team)
-    ON CONFLICT (external_game_id) DO UPDATE SET
+    ON CONFLICT (sport_key, external_game_id) DO UPDATE SET
         commence_time = EXCLUDED.commence_time,
         home_team     = EXCLUDED.home_team,
         away_team     = EXCLUDED.away_team
@@ -113,11 +113,14 @@ def insert_games_and_prices(
 
 # ── Snapshot queries ─────────────────────────────────────────────────
 
-_LATEST_CAPTURED_AT = text("""
-    SELECT MAX(captured_at) FROM prices
+_LATEST_CAPTURED_AT_FOR_SPORT = text("""
+    SELECT MAX(p.captured_at)
+      FROM prices p
+      JOIN games g ON g.id = p.game_id
+     WHERE g.sport_key = :sport_key
 """)
 
-_PRICES_FOR_CAPTURE = text("""
+_PRICES_FOR_CAPTURE_AND_SPORT = text("""
     SELECT g.external_game_id,
            p.captured_at,
            p.bookmaker,
@@ -129,21 +132,27 @@ _PRICES_FOR_CAPTURE = text("""
       FROM prices p
       JOIN games g ON g.id = p.game_id
      WHERE p.captured_at = :captured_at
+       AND g.sport_key = :sport_key
 """)
 
 
-def get_latest_captured_at(db: Session) -> datetime | None:
-    """Return the most recent captured_at timestamp, or None if the table is empty."""
-    row = db.execute(_LATEST_CAPTURED_AT).scalar()
-    return row
+def get_latest_captured_at(db: Session, sport_key: str) -> datetime | None:
+    """Return the most recent captured_at for a given sport, or None."""
+    return db.execute(
+        _LATEST_CAPTURED_AT_FOR_SPORT, {"sport_key": sport_key}
+    ).scalar()
 
 
 def get_prices_for_capture(
     db: Session,
     captured_at: datetime,
+    sport_key: str,
 ) -> list[PriceRow]:
-    """Return every price row for a given captured_at snapshot."""
-    rows = db.execute(_PRICES_FOR_CAPTURE, {"captured_at": captured_at}).fetchall()
+    """Return every price row for a given sport and captured_at snapshot."""
+    rows = db.execute(
+        _PRICES_FOR_CAPTURE_AND_SPORT,
+        {"captured_at": captured_at, "sport_key": sport_key},
+    ).fetchall()
     return [
         PriceRow(
             external_game_id=r[0],
@@ -159,16 +168,16 @@ def get_prices_for_capture(
     ]
 
 
-def get_latest_prices(db: Session) -> list[PriceRow]:
-    """Return all prices from the most recent snapshot.
+def get_latest_prices(db: Session, sport_key: str) -> list[PriceRow]:
+    """Return all prices from the most recent snapshot for a sport.
 
-    Convenience wrapper: finds the latest captured_at, then fetches
-    all rows for that timestamp. Returns an empty list if no data exists.
+    Convenience wrapper: finds the latest captured_at for the sport,
+    then fetches all rows. Returns an empty list if no data exists.
     """
-    ts = get_latest_captured_at(db)
+    ts = get_latest_captured_at(db, sport_key)
     if ts is None:
         return []
-    return get_prices_for_capture(db, ts)
+    return get_prices_for_capture(db, ts, sport_key)
 
 
 # ── Alert dedupe ─────────────────────────────────────────────────────

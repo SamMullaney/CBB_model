@@ -14,6 +14,7 @@ from tenacity import (
 )
 
 from cbb.config.settings import settings
+from cbb.config.sports import MARKETS_PARAM
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +34,7 @@ def _is_rate_limited(exc: BaseException) -> bool:
 )
 async def fetch_odds(
     sport: str = "basketball_ncaab",
-    markets: str = "spreads,totals,h2h",
+    markets: str | None = None,
     regions: str = "us",
     odds_format: str = "american",
 ) -> list[dict[str, Any]]:
@@ -41,7 +42,7 @@ async def fetch_odds(
 
     Args:
         sport: Sport key (default: NCAAB).
-        markets: Comma-separated market types.
+        markets: Comma-separated market types. Defaults to config.sports.MARKETS_PARAM.
         regions: Comma-separated regions (us, us2, uk, eu, au).
         odds_format: 'american' or 'decimal'.
 
@@ -54,6 +55,9 @@ async def fetch_odds(
     """
     if not settings.odds_api_key:
         raise ValueError("ODDS_API_KEY is not set — check your .env file.")
+
+    if markets is None:
+        markets = MARKETS_PARAM
 
     url = f"{settings.odds_api_base_url}/sports/{sport}/odds/"
     params = {
